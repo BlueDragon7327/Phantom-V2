@@ -1,0 +1,2098 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Phantom V2 - Advanced iframe Loader</title>
+    <style>
+        :root {
+            --phantom-dark: #0f0721;
+            --phantom-primary: #6a1b9a;
+            --phantom-secondary: #9c27b0;
+            --phantom-accent: #ce93d8;
+            --phantom-light: #f3e5f5;
+            --phantom-success: #00c853;
+            --phantom-error: #ff1744;
+            --phantom-warning: #ffab00;
+            --phantom-info: #2196f3;
+            --phantom-glow: 0 0 15px rgba(156, 39, 176, 0.7);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--phantom-dark);
+            color: var(--phantom-light);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+        }
+
+        .loader {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: var(--phantom-dark);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            transition: opacity 0.5s ease-out;
+        }
+
+        .loader-content {
+            text-align: center;
+        }
+
+        .loader-spinner {
+            width: 80px;
+            height: 80px;
+            border: 4px solid rgba(156, 39, 176, 0.3);
+            border-radius: 50%;
+            border-top: 4px solid var(--phantom-secondary);
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .logo-container {
+            margin-bottom: 20px;
+            font-size: 32px;
+            font-weight: bold;
+            letter-spacing: 2px;
+            text-shadow: var(--phantom-glow);
+            color: var(--phantom-accent);
+        }
+
+        .header {
+            background: linear-gradient(to right, var(--phantom-dark), var(--phantom-primary), var(--phantom-dark));
+            padding: 12px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+            position: relative;
+            z-index: 100;
+        }
+
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+            letter-spacing: 1px;
+            text-shadow: var(--phantom-glow);
+            color: var(--phantom-accent);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .logo i {
+            font-size: 28px;
+        }
+
+        .nav {
+            display: flex;
+            gap: 15px;
+        }
+
+        .nav-item {
+            background: transparent;
+            color: var(--phantom-light);
+            border: none;
+            padding: 8px 16px;
+            cursor: pointer;
+            font-size: 14px;
+            border-radius: 4px;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .nav-item::before {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 0%;
+            height: 2px;
+            background-color: var(--phantom-accent);
+            transition: width 0.3s ease;
+        }
+
+        .nav-item:hover {
+            color: var(--phantom-accent);
+        }
+
+        .nav-item:hover::before {
+            width: 100%;
+        }
+
+        .nav-item.active {
+            background-color: var(--phantom-primary);
+            color: white;
+        }
+
+        .main-container {
+            display: flex;
+            flex: 1;
+            height: calc(100vh - 60px);
+        }
+
+        .sidebar {
+            width: 280px;
+            background-color: rgba(15, 7, 33, 0.9);
+            border-right: 1px solid var(--phantom-primary);
+            padding: 15px;
+            overflow-y: auto;
+            transition: transform 0.3s ease;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sidebar-section {
+            margin-bottom: 20px;
+            border-bottom: 1px solid rgba(156, 39, 176, 0.3);
+            padding-bottom: 15px;
+        }
+
+        .sidebar-section:last-child {
+            border-bottom: none;
+        }
+
+        .section-title {
+            font-size: 16px;
+            margin-bottom: 12px;
+            color: var(--phantom-secondary);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .section-content {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .url-input-container {
+            display: flex;
+            gap: 5px;
+        }
+
+        .url-input {
+            flex: 1;
+            background-color: rgba(255, 255, 255, 0.1);
+            border: 1px solid var(--phantom-secondary);
+            border-radius: 4px;
+            padding: 8px 12px;
+            color: white;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        .url-input:focus {
+            outline: none;
+            border-color: var(--phantom-accent);
+            box-shadow: var(--phantom-glow);
+        }
+
+        .button {
+            background-color: var(--phantom-primary);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 8px 12px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        .button:hover {
+            background-color: var(--phantom-secondary);
+            box-shadow: var(--phantom-glow);
+        }
+
+        .button.secondary {
+            background-color: transparent;
+            border: 1px solid var(--phantom-secondary);
+        }
+
+        .button.secondary:hover {
+            background-color: rgba(156, 39, 176, 0.2);
+        }
+
+        .button.small {
+            padding: 4px 8px;
+            font-size: 12px;
+        }
+
+        .app-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+        }
+
+        .app-item {
+            background-color: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(156, 39, 176, 0.3);
+            border-radius: 4px;
+            padding: 10px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .app-item:hover {
+            background-color: rgba(156, 39, 176, 0.2);
+            border-color: var(--phantom-secondary);
+            transform: translateY(-2px);
+            box-shadow: var(--phantom-glow);
+        }
+
+        .app-icon {
+            font-size: 24px;
+            margin-bottom: 5px;
+            color: var(--phantom-accent);
+        }
+
+        .app-name {
+            font-size: 12px;
+            color: var(--phantom-light);
+        }
+
+        .history-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px;
+            background-color: rgba(255, 255, 255, 0.05);
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .history-item:hover {
+            background-color: rgba(156, 39, 176, 0.2);
+        }
+
+        .history-url {
+            font-size: 12px;
+            color: var(--phantom-light);
+            text-overflow: ellipsis;
+            overflow: hidden;
+            white-space: nowrap;
+            max-width: 180px;
+        }
+
+        .setting-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .setting-label {
+            font-size: 14px;
+        }
+
+        .toggle {
+            position: relative;
+            display: inline-block;
+            width: 40px;
+            height: 20px;
+        }
+
+        .toggle input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(255, 255, 255, 0.1);
+            transition: .4s;
+            border-radius: 20px;
+        }
+
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 16px;
+            width: 16px;
+            left: 2px;
+            bottom: 2px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        input:checked + .toggle-slider {
+            background-color: var(--phantom-secondary);
+        }
+
+        input:checked + .toggle-slider:before {
+            transform: translateX(20px);
+        }
+
+        .content-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        .toolbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 15px;
+            background-color: rgba(15, 7, 33, 0.95);
+            border-bottom: 1px solid var(--phantom-primary);
+        }
+
+        .tab-container {
+            display: flex;
+            gap: 5px;
+            overflow-x: auto;
+            max-width: calc(100% - 120px);
+            scrollbar-width: thin;
+            scrollbar-color: var(--phantom-secondary) transparent;
+        }
+
+        .tab-container::-webkit-scrollbar {
+            height: 5px;
+        }
+
+        .tab-container::-webkit-scrollbar-thumb {
+            background-color: var(--phantom-secondary);
+            border-radius: 5px;
+        }
+
+        .tab {
+            background-color: rgba(255, 255, 255, 0.05);
+            border-radius: 4px 4px 0 0;
+            padding: 8px 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            min-width: 120px;
+            max-width: 180px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            border: 1px solid transparent;
+            border-bottom: none;
+            position: relative;
+        }
+
+        .tab.active {
+            background-color: rgba(156, 39, 176, 0.2);
+            border-color: var(--phantom-primary);
+        }
+
+        .tab-favicon {
+            width: 16px;
+            height: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .tab-title {
+            font-size: 12px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .tab-close {
+            font-size: 16px;
+            margin-left: auto;
+            opacity: 0.6;
+            transition: opacity 0.3s ease;
+        }
+
+        .tab-close:hover {
+            opacity: 1;
+            color: var(--phantom-error);
+        }
+
+        .toolbar-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .iframe-container {
+            flex: 1;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .iframe-wrapper {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            display: none;
+        }
+
+        .iframe-wrapper.active {
+            opacity: 1;
+            display: block;
+        }
+
+        iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+            background-color: white;
+        }
+
+        .iframe-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 5;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+
+        .overlay-message {
+            font-size: 18px;
+            margin-bottom: 20px;
+            text-align: center;
+            max-width: 80%;
+        }
+
+        .status-bar {
+            background-color: rgba(15, 7, 33, 0.95);
+            border-top: 1px solid var(--phantom-primary);
+            padding: 8px 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 12px;
+        }
+
+        .status-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .status-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .status-actions {
+            display: flex;
+            gap: 15px;
+        }
+
+        .status-button {
+            background: transparent;
+            border: none;
+            color: var(--phantom-light);
+            cursor: pointer;
+            transition: color 0.3s ease;
+        }
+
+        .status-button:hover {
+            color: var(--phantom-accent);
+        }
+
+        /* Toast Notifications */
+        .toast-container {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            z-index: 9999;
+        }
+
+        .toast {
+            min-width: 250px;
+            padding: 12px 15px;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.3);
+            animation: toast-in 0.5s ease, toast-out 0.5s ease 3.5s forwards;
+        }
+
+        @keyframes toast-in {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        @keyframes toast-out {
+            from { transform: translateX(0); opacity: 1; }
+            to { transform: translateX(100%); opacity: 0; }
+        }
+
+        .toast.success {
+            background-color: var(--phantom-success);
+            color: white;
+        }
+
+        .toast.error {
+            background-color: var(--phantom-error);
+            color: white;
+        }
+
+        .toast.warning {
+            background-color: var(--phantom-warning);
+            color: var(--phantom-dark);
+        }
+
+        .toast.info {
+            background-color: var(--phantom-info);
+            color: white;
+        }
+
+        .toast-content {
+            flex: 1;
+        }
+
+        .toast-close {
+            background: transparent;
+            border: none;
+            color: inherit;
+            cursor: pointer;
+            font-size: 16px;
+            opacity: 0.7;
+            transition: opacity 0.3s ease;
+        }
+
+        .toast-close:hover {
+            opacity: 1;
+        }
+
+        /* Modal */
+        .modal-backdrop {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+
+        .modal-backdrop.active {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        .modal {
+            background-color: var(--phantom-dark);
+            border: 1px solid var(--phantom-primary);
+            border-radius: 6px;
+            width: 90%;
+            max-width: 500px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: var(--phantom-glow);
+            transform: scale(0.95);
+            transition: transform 0.3s ease;
+        }
+
+        .modal-backdrop.active .modal {
+            transform: scale(1);
+        }
+
+        .modal-header {
+            padding: 15px;
+            border-bottom: 1px solid var(--phantom-primary);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-title {
+            font-size: 18px;
+            color: var(--phantom-accent);
+        }
+
+        .modal-close {
+            background: transparent;
+            border: none;
+            color: var(--phantom-light);
+            font-size: 20px;
+            cursor: pointer;
+            transition: color 0.3s ease;
+        }
+
+        .modal-close:hover {
+            color: var(--phantom-accent);
+        }
+
+        .modal-body {
+            padding: 15px;
+        }
+
+        .modal-footer {
+            padding: 15px;
+            border-top: 1px solid var(--phantom-primary);
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .sidebar {
+                position: absolute;
+                left: -280px;
+                height: calc(100vh - 60px);
+                z-index: 10;
+            }
+
+            .sidebar.active {
+                transform: translateX(280px);
+            }
+
+            .sidebar-toggle {
+                display: block;
+            }
+        }
+
+        #bookmarks-section ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        #bookmarks-section li {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px;
+            background-color: rgba(255, 255, 255, 0.05);
+            border-radius: 4px;
+            margin-bottom: 5px;
+        }
+
+        #bookmarks-section .bookmark-url {
+            font-size: 12px;
+            color: var(--phantom-light);
+            text-overflow: ellipsis;
+            overflow: hidden;
+            white-space: nowrap;
+            max-width: 180px;
+            cursor: pointer;
+        }
+
+        #bookmarks-section .bookmark-actions {
+            display: flex;
+            gap: 5px;
+        }
+
+        #bookmarks-section .bookmark-button {
+            background: transparent;
+            border: none;
+            color: var(--phantom-light);
+            cursor: pointer;
+            font-size: 14px;
+            transition: color 0.3s ease;
+        }
+
+        #bookmarks-section .bookmark-button:hover {
+            color: var(--phantom-accent);
+        }
+
+        #bookmarks-section .bookmark-button.delete:hover {
+            color: var(--phantom-error);
+        }
+
+        .custom-scroll::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .custom-scroll::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .custom-scroll::-webkit-scrollbar-thumb {
+            background: var(--phantom-secondary);
+            border-radius: 3px;
+        }
+
+        .custom-scroll::-webkit-scrollbar-thumb:hover {
+            background: var(--phantom-accent);
+        }
+
+        /* Pulse animation */
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+
+        .theme-selector {
+            margin-top: 10px;
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        
+        .theme-option {
+            width: 25px;
+            height: 25px;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: transform 0.3s ease;
+            border: 2px solid transparent;
+        }
+        
+        .theme-option:hover {
+            transform: scale(1.1);
+        }
+        
+        .theme-option.active {
+            border-color: white;
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+        }
+        
+        /* Theme colors */
+        .theme-phantom {
+            background: linear-gradient(135deg, #6a1b9a, #9c27b0);
+        }
+        
+        .theme-midnight {
+            background: linear-gradient(135deg, #1a237e, #3949ab);
+        }
+        
+        .theme-emerald {
+            background: linear-gradient(135deg, #004d40, #00897b);
+        }
+        
+        .theme-crimson {
+            background: linear-gradient(135deg, #b71c1c, #e53935);
+        }
+        
+        .theme-sunset {
+            background: linear-gradient(135deg, #ff6f00, #ffab00);
+        }
+        
+        .theme-cyber {
+            background: linear-gradient(135deg, #00bcd4, #1de9b6);
+        }
+    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <!-- Initial Loader -->
+    <div class="loader" id="initial-loader">
+        <div class="loader-content">
+            <div class="logo-container">
+                <i class="fas fa-ghost"></i> PHANTOM V2
+            </div>
+            <div class="loader-spinner"></div>
+            <p>Initializing Phantom V2...</p>
+        </div>
+    </div>
+
+    <!-- Main Application -->
+    <header class="header">
+        <div class="logo">
+            <i class="fas fa-ghost"></i> PHANTOM V2
+        </div>
+        <div class="nav">
+            <button class="nav-item active" data-section="browser">
+                <i class="fas fa-globe"></i> Browser
+            </button>
+            <button class="nav-item" data-section="apps">
+                <i class="fas fa-th"></i> App Library
+            </button>
+            <button class="nav-item" data-section="settings">
+                <i class="fas fa-cog"></i> Settings
+            </button>
+            <button class="nav-item" id="sidebar-toggle">
+                <i class="fas fa-bars"></i>
+            </button>
+        </div>
+    </header>
+    
+    <div class="main-container">
+        <aside class="sidebar custom-scroll" id="sidebar">
+            <div class="sidebar-section">
+                <div class="section-title">
+                    <i class="fas fa-compass"></i> Web Navigation
+                </div>
+                <div class="section-content">
+                    <div class="url-input-container">
+                        <input type="text" id="url-input" class="url-input" placeholder="Enter URL or search...">
+                        <button id="load-url" class="button">
+                            <i class="fas fa-arrow-right"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="sidebar-section">
+                <div class="section-title">
+                    <i class="fas fa-th"></i> Quick Apps
+                </div>
+                <div class="section-content">
+                    <div class="app-grid" id="quick-apps">
+                        <div class="app-item" data-url="https://www.google.com">
+                            <div class="app-icon"><i class="fab fa-google"></i></div>
+                            <div class="app-name">Google</div>
+                        </div>
+                        <div class="app-item" data-url="https://www.youtube.com">
+                            <div class="app-icon"><i class="fab fa-youtube"></i></div>
+                            <div class="app-name">YouTube</div>
+                        </div>
+                        <div class="app-item" data-url="https://www.twitter.com">
+                            <div class="app-icon"><i class="fab fa-twitter"></i></div>
+                            <div class="app-name">Twitter</div>
+                        </div>
+                        <div class="app-item" data-url="https://www.github.com">
+                            <div class="app-icon"><i class="fab fa-github"></i></div>
+                            <div class="app-name">GitHub</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="sidebar-section" id="bookmarks-section">
+                <div class="section-title">
+                    <i class="fas fa-bookmark"></i> Bookmarks
+                    <button class="button small" id="add-bookmark-btn">
+                        <i class="fas fa-plus"></i>
+                    </button>
+                </div>
+                <div class="section-content">
+                    <ul id="bookmarks-list">
+                        <!-- Bookmarks will be added here dynamically -->
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="sidebar-section">
+                <div class="section-title">
+                    <i class="fas fa-history"></i> History
+                </div>
+                <div class="section-content" id="history-list">
+                    <!-- History items will be added here dynamically -->
+                </div>
+            </div>
+        </aside>
+        
+        <main class="content-area" id="browser-section">
+            <div class="toolbar">
+                <div class="tab-container" id="tabs-container">
+                    <!-- Tabs will be added here dynamically -->
+                </div>
+                <div class="toolbar-actions">
+                    <button class="button secondary" id="new-tab-btn">
+                        <i class="fas fa-plus"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <div class="iframe-container" id="iframe-container">
+                <!-- iframes will be added here dynamically -->
+                <div class="iframe-overlay" id="iframe-overlay">
+                    <div class="overlay-message">Content cannot be displayed</div>
+                    <button class="button" id="overlay-retry">Try Again</button>
+                </div>
+            </div>
+            
+            <div class="status-bar">
+                <div class="status-info">
+                    <div class="status-item" id="current-url">
+                        <i class="fas fa-link"></i> No URL
+                    </div>
+                    <div class="status-item">
+                        <i class="fas fa-shield-alt"></i> <span id="security-status">Secure</span>
+                    </div>
+                </div>
+                <div class="status-actions">
+                    <button class="status-button" id="refresh-btn" title="Refresh">
+                        <i class="fas fa-sync-alt"></i>
+                    </button>
+                    <button class="status-button" id="bookmark-btn" title="Bookmark">
+                        <i class="far fa-bookmark"></i>
+                    </button>
+                    <button class="status-button" id="fullscreen-btn" title="Fullscreen">
+                        <i class="fas fa-expand"></i>
+                    </button>
+                </div>
+            </div>
+        </main>
+        
+        <main class="content-area" id="apps-section" style="display: none;">
+            <div class="toolbar">
+                <h2><i class="fas fa-th"></i> App Library</h2>
+            </div>
+            
+            <div style="padding: 20px; overflow-y: auto; height: calc(100% - 50px);">
+                <div class="app-grid" style="grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));">
+                    <div class="app-item" data-url="https://www.google.com">
+                        <div class="app-icon"><i class="fab fa-google"></i></div>
+                        <div class="app-name">Google</div>
+                    </div>
+                    <div class="app-item" data-url="https://www.youtube.com">
+                        <div class="app-icon"><i class="fab fa-youtube"></i></div>
+                        <div class="app-name">YouTube</div>
+                    </div>
+                    <div class="app-item" data-url="https://www.twitter.com">
+                        <div class="app-icon"><i class="fab fa-twitter"></i></div>
+                        <div class="app-name">Twitter</div>
+                    </div>
+                    <div class="app-item" data-url="https://www.github.com">
+                        <div class="app-icon"><i class="fab fa-github"></i></div>
+                        <div class="app-name">GitHub</div>
+                    </div>
+                    <div class="app-item" data-url="https://www.reddit.com">
+                        <div class="app-icon"><i class="fab fa-reddit"></i></div>
+                        <div class="app-name">Reddit</div>
+                    </div>
+                    <div class="app-item" data-url="https://www.netflix.com">
+                        <div class="app-icon"><i class="fab fa-netflix"></i></div>
+                        <div class="app-name">Netflix</div>
+                    </div>
+                    <div class="app-item" data-url="https://www.spotify.com">
+                        <div class="app-icon"><i class="fab fa-spotify"></i></div>
+                        <div class="app-name">Spotify</div>
+                    </div>
+                    <div class="app-item" data-url="https://www.twitch.tv">
+                        <div class="app-icon"><i class="fab fa-twitch"></i></div>
+                        <div class="app-name">Twitch</div>
+                    </div>
+                    <div class="app-item" data-url="https://www.amazon.com">
+                        <div class="app-icon"><i class="fab fa-amazon"></i></div>
+                        <div class="app-name">Amazon</div>
+                    </div>
+                    <div class="app-item" data-url="https://www.facebook.com">
+                        <div class="app-icon"><i class="fab fa-facebook"></i></div>
+                        <div class="app-name">Facebook</div>
+                    </div>
+                    <div class="app-item" data-url="https://www.instagram.com">
+                        <div class="app-icon"><i class="fab fa-instagram"></i></div>
+                        <div class="app-name">Instagram</div>
+                    </div>
+                    <div class="app-item" data-url="https://www.linkedin.com">
+                        <div class="app-icon"><i class="fab fa-linkedin"></i></div>
+                        <div class="app-name">LinkedIn</div>
+                    </div>
+                    <div class="app-item" data-url="https://www.pinterest.com">
+                        <div class="app-icon"><i class="fab fa-pinterest"></i></div>
+                        <div class="app-name">Pinterest</div>
+                    </div>
+                    <div class="app-item" data-url="https://www.wikipedia.org">
+                        <div class="app-icon"><i class="fab fa-wikipedia-w"></i></div>
+                        <div class="app-name">Wikipedia</div>
+                    </div>
+                    <div class="app-item" data-url="https://www.discord.com">
+                        <div class="app-icon"><i class="fab fa-discord"></i></div>
+                        <div class="app-name">Discord</div>
+                    </div>
+                </div>
+            </div>
+        </main>
+        
+        <main class="content-area" id="settings-section" style="display: none;">
+            <div class="toolbar">
+                <h2><i class="fas fa-cog"></i> Settings</h2>
+            </div>
+            
+            <div style="padding: 20px; overflow-y: auto; height: calc(100% - 50px);">
+                <div class="sidebar-section">
+                    <div class="section-title">
+                        <i class="fas fa-paint-brush"></i> Appearance
+                    </div>
+                    <div class="section-content">
+                        <div class="setting-item">
+                            <div class="setting-label">Theme</div>
+                            <div class="theme-selector">
+                                <div class="theme-option theme-phantom active" data-theme="phantom" title="Phantom"></div>
+                                <div class="theme-option theme-midnight" data-theme="midnight" title="Midnight"></div>
+                                <div class="theme-option theme-emerald" data-theme="emerald" title="Emerald"></div>
+                                <div class="theme-option theme-crimson" data-theme="crimson" title="Crimson"></div>
+                                <div class="theme-option theme-sunset" data-theme="sunset" title="Sunset"></div>
+                                <div class="theme-option theme-cyber" data-theme="cyber" title="Cyber"></div>
+                            </div>
+                        </div>
+                        <div class="setting-item">
+                            <div class="setting-label">Dark Mode</div>
+                            <label class="toggle">
+                                <input type="checkbox" id="dark-mode-toggle" checked>
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                        <div class="setting-item">
+                            <div class="setting-label">Animations</div>
+                            <label class="toggle">
+                                <input type="checkbox" id="animations-toggle" checked>
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                        <div class="setting-item">
+                            <div class="setting-label">Blur Effects</div>
+                            <label class="toggle">
+                                <input type="checkbox" id="blur-toggle" checked>
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="sidebar-section">
+                    <div class="section-title">
+                        <i class="fas fa-shield-alt"></i> Privacy & Security
+                    </div>
+                    <div class="section-content">
+                        <div class="setting-item">
+                            <div class="setting-label">Block Ads</div>
+                            <label class="toggle">
+                                <input type="checkbox" id="block-ads-toggle">
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                        <div class="setting-item">
+                            <div class="setting-label">Block Trackers</div>
+                            <label class="toggle">
+                                <input type="checkbox" id="block-trackers-toggle">
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                        <div class="setting-item">
+                            <div class="setting-label">Clear History on Exit</div>
+                            <label class="toggle">
+                                <input type="checkbox" id="clear-history-toggle">
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                        <div class="setting-item">
+                            <div class="setting-label">Private Browsing</div>
+                            <label class="toggle">
+                                <input type="checkbox" id="private-browsing-toggle">
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="sidebar-section">
+                    <div class="section-title">
+                        <i class="fas fa-sliders-h"></i> Advanced
+                    </div>
+                    <div class="section-content">
+                        <div class="setting-item">
+                            <div class="setting-label">Auto Refresh</div>
+                            <label class="toggle">
+                                <input type="checkbox" id="auto-refresh-toggle">
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                        <div class="setting-item">
+                            <div class="setting-label">Notifications</div>
+                            <label class="toggle">
+                                <input type="checkbox" id="notifications-toggle" checked>
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                        <div class="setting-item">
+                            <div class="setting-label">Save Tabs on Exit</div>
+                            <label class="toggle">
+                                <input type="checkbox" id="save-tabs-toggle" checked>
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                        <div class="setting-item">
+                            <div class="setting-label">Hardware Acceleration</div>
+                            <label class="toggle">
+                                <input type="checkbox" id="hardware-accel-toggle" checked>
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="sidebar-section">
+                    <div class="section-title">
+                        <i class="fas fa-trash-alt"></i> Data Management
+                    </div>
+                    <div class="section-content">
+                        <button class="button" id="clear-history-btn">Clear History</button>
+                        <button class="button secondary" style="margin-top: 10px;" id="clear-cache-btn">Clear Cache</button>
+                        <button class="button secondary" style="margin-top: 10px;" id="reset-settings-btn">Reset All Settings</button>
+                    </div>
+                </div>
+                
+                <div class="sidebar-section">
+                    <div class="section-title">
+                        <i class="fas fa-info-circle"></i> About
+                    </div>
+                    <div class="section-content">
+                        <p>Phantom V2 - Advanced iframe Loader</p>
+                        <p>Version: 2.0.0</p>
+                        <p style="margin-top: 10px;"><small>Made with <i class="fas fa-ghost"></i> by Phantom Team</small></p>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+    
+    <!-- Toast Notifications Container -->
+    <div class="toast-container" id="toast-container">
+        <!-- Toasts will be added here dynamically -->
+    </div>
+    
+    <!-- Modals -->
+    <div class="modal-backdrop" id="bookmark-modal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 class="modal-title"><i class="fas fa-bookmark"></i> Add Bookmark</h3>
+                <button class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div style="margin-bottom: 15px;">
+                    <label for="bookmark-name" style="display: block; margin-bottom: 5px;">Name:</label>
+                    <input type="text" id="bookmark-name" class="url-input" placeholder="Bookmark name" style="width: 100%;">
+                </div>
+                <div>
+                    <label for="bookmark-url" style="display: block; margin-bottom: 5px;">URL:</label>
+                    <input type="text" id="bookmark-url" class="url-input" placeholder="https://example.com" style="width: 100%;">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="button secondary" id="cancel-bookmark">Cancel</button>
+                <button class="button" id="save-bookmark">Save</button>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Global State
+            const state = {
+                tabs: [],
+                activeTabId: null,
+                history: [],
+                bookmarks: [
+                    { id: 'bm1', name: 'Google', url: 'https://www.google.com' },
+                    { id: 'bm2', name: 'YouTube', url: 'https://www.youtube.com' }
+                ],
+                settings: {
+                    theme: 'phantom',
+                    darkMode: true,
+                    animations: true,
+                    blurEffects: true,
+                    blockAds: false,
+                    blockTrackers: false,
+                    clearHistoryOnExit: false,
+                    privateBrowsing: false,
+                    autoRefresh: false,
+                    notifications: true,
+                    saveTabsOnExit: true,
+                    hardwareAcceleration: true
+                }
+            };
+
+            // DOM Elements
+            const elements = {
+                initialLoader: document.getElementById('initial-loader'),
+                sidebar: document.getElementById('sidebar'),
+                sidebarToggle: document.getElementById('sidebar-toggle'),
+                navItems: document.querySelectorAll('.nav-item'),
+                sections: {
+                    browser: document.getElementById('browser-section'),
+                    apps: document.getElementById('apps-section'),
+                    settings: document.getElementById('settings-section')
+                },
+                urlInput: document.getElementById('url-input'),
+                loadUrlBtn: document.getElementById('load-url'),
+                tabsContainer: document.getElementById('tabs-container'),
+                newTabBtn: document.getElementById('new-tab-btn'),
+                iframeContainer: document.getElementById('iframe-container'),
+                iframeOverlay: document.getElementById('iframe-overlay'),
+                overlayRetry: document.getElementById('overlay-retry'),
+                currentUrl: document.getElementById('current-url'),
+                securityStatus: document.getElementById('security-status'),
+                refreshBtn: document.getElementById('refresh-btn'),
+                bookmarkBtn: document.getElementById('bookmark-btn'),
+                fullscreenBtn: document.getElementById('fullscreen-btn'),
+                quickApps: document.querySelectorAll('#quick-apps .app-item'),
+                appItems: document.querySelectorAll('.app-item'),
+                historyList: document.getElementById('history-list'),
+                bookmarksList: document.getElementById('bookmarks-list'),
+                addBookmarkBtn: document.getElementById('add-bookmark-btn'),
+                bookmarkModal: document.getElementById('bookmark-modal'),
+                cancelBookmark: document.getElementById('cancel-bookmark'),
+                saveBookmark: document.getElementById('save-bookmark'),
+                bookmarkName: document.getElementById('bookmark-name'),
+                bookmarkUrl: document.getElementById('bookmark-url'),
+                modalClose: document.querySelector('.modal-close'),
+                toastContainer: document.getElementById('toast-container'),
+                clearHistoryBtn: document.getElementById('clear-history-btn'),
+                clearCacheBtn: document.getElementById('clear-cache-btn'),
+                resetSettingsBtn: document.getElementById('reset-settings-btn'),
+                themeOptions: document.querySelectorAll('.theme-option'),
+                toggles: {
+                    darkMode: document.getElementById('dark-mode-toggle'),
+                    animations: document.getElementById('animations-toggle'),
+                    blur: document.getElementById('blur-toggle'),
+                    blockAds: document.getElementById('block-ads-toggle'),
+                    blockTrackers: document.getElementById('block-trackers-toggle'),
+                    clearHistory: document.getElementById('clear-history-toggle'),
+                    privateBrowsing: document.getElementById('private-browsing-toggle'),
+                    autoRefresh: document.getElementById('auto-refresh-toggle'),
+                    notifications: document.getElementById('notifications-toggle'),
+                    saveTabs: document.getElementById('save-tabs-toggle'),
+                    hardwareAccel: document.getElementById('hardware-accel-toggle')
+                }
+            };
+
+            // Initialize App
+            function initApp() {
+                // Simulate loading
+                setTimeout(() => {
+                    elements.initialLoader.style.opacity = '0';
+                    setTimeout(() => {
+                        elements.initialLoader.style.display = 'none';
+                    }, 500);
+                }, 1500);
+
+                // Create default tab
+                createNewTab('New Tab', 'about:blank');
+                
+                // Setup event listeners
+                setupEventListeners();
+                
+                // Load settings from local storage
+                loadSettings();
+                
+                // Load bookmarks and history
+                loadBookmarks();
+                loadHistory();
+                
+                // Show a welcome toast
+                showToast('Welcome to Phantom V2', 'info');
+            }
+
+            // Event Listeners
+            function setupEventListeners() {
+                // Navigation
+                elements.navItems.forEach(item => {
+                    item.addEventListener('click', () => {
+                        const section = item.dataset.section;
+                        
+                        // Skip if clicking sidebar toggle
+                        if (item.id === 'sidebar-toggle') return;
+                        
+                        // Toggle active class
+                        elements.navItems.forEach(nav => nav.classList.remove('active'));
+                        item.classList.add('active');
+                        
+                        // Show selected section
+                        Object.keys(elements.sections).forEach(key => {
+                            elements.sections[key].style.display = key === section ? 'flex' : 'none';
+                        });
+                    });
+                });
+                
+                // Sidebar toggle
+                elements.sidebarToggle.addEventListener('click', () => {
+                    elements.sidebar.classList.toggle('active');
+                });
+                
+                // URL Load
+                elements.loadUrlBtn.addEventListener('click', loadUrl);
+                elements.urlInput.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter') loadUrl();
+                });
+                
+                // New Tab
+                elements.newTabBtn.addEventListener('click', () => {
+                    createNewTab('New Tab', 'about:blank');
+                });
+                
+                // Refresh Button
+                elements.refreshBtn.addEventListener('click', () => {
+                    refreshActiveTab();
+                });
+                
+                // Bookmark Button
+                elements.bookmarkBtn.addEventListener('click', () => {
+                    if (state.activeTabId) {
+                        const activeTab = state.tabs.find(tab => tab.id === state.activeTabId);
+                        if (activeTab && activeTab.url !== 'about:blank') {
+                            elements.bookmarkName.value = activeTab.title;
+                            elements.bookmarkUrl.value = activeTab.url;
+                            elements.bookmarkModal.classList.add('active');
+                        }
+                    }
+                });
+                
+                // Fullscreen Button
+                elements.fullscreenBtn.addEventListener('click', () => {
+                    toggleFullscreen();
+                });
+                
+                // Overlay retry button
+                elements.overlayRetry.addEventListener('click', () => {
+                    if (state.activeTabId) {
+                        const activeTab = state.tabs.find(tab => tab.id === state.activeTabId);
+                        if (activeTab) {
+                            navigateToUrl(activeTab.id, activeTab.url);
+                        }
+                    }
+                });
+                
+                // Quick Apps
+                elements.quickApps.forEach(app => {
+                    app.addEventListener('click', () => {
+                        const url = app.dataset.url;
+                        if (url) {
+                            if (state.activeTabId) {
+                                navigateToUrl(state.activeTabId, url);
+                                elements.urlInput.value = url;
+                            } else {
+                                createNewTab(url, url);
+                            }
+                        }
+                    });
+                });
+                
+                // App Library Items
+                elements.appItems.forEach(app => {
+                    app.addEventListener('click', () => {
+                        const url = app.dataset.url;
+                        if (url) {
+                            if (state.activeTabId) {
+                                navigateToUrl(state.activeTabId, url);
+                                elements.urlInput.value = url;
+                            } else {
+                                createNewTab(url, url);
+                            }
+                            
+                            // Switch to browser section
+                            elements.navItems.forEach(nav => nav.classList.remove('active'));
+                            document.querySelector('[data-section="browser"]').classList.add('active');
+                            
+                            Object.keys(elements.sections).forEach(key => {
+                                elements.sections[key].style.display = key === 'browser' ? 'flex' : 'none';
+                            });
+                        }
+                    });
+                });
+                
+                // Add Bookmark Button
+                elements.addBookmarkBtn.addEventListener('click', () => {
+                    elements.bookmarkUrl.value = '';
+                    elements.bookmarkName.value = '';
+                    elements.bookmarkModal.classList.add('active');
+                });
+                
+                // Cancel Bookmark
+                elements.cancelBookmark.addEventListener('click', () => {
+                    elements.bookmarkModal.classList.remove('active');
+                });
+                
+                // Save Bookmark
+                elements.saveBookmark.addEventListener('click', () => {
+                    const name = elements.bookmarkName.value.trim();
+                    const url = elements.bookmarkUrl.value.trim();
+                    
+                    if (name && url) {
+                        addBookmark(name, url);
+                        elements.bookmarkModal.classList.remove('active');
+                        showToast('Bookmark added', 'success');
+                    }
+                });
+                
+                // Close Modal
+                elements.modalClose.addEventListener('click', () => {
+                    elements.bookmarkModal.classList.remove('active');
+                });
+                
+                // Clear History
+                elements.clearHistoryBtn.addEventListener('click', () => {
+                    clearHistory();
+                    showToast('History cleared', 'success');
+                });
+                
+                // Clear Cache
+                elements.clearCacheBtn.addEventListener('click', () => {
+                    // Simulate clearing cache
+                    showToast('Cache cleared', 'success');
+                });
+                
+                // Reset Settings
+                elements.resetSettingsBtn.addEventListener('click', () => {
+                    resetSettings();
+                    showToast('Settings reset to default', 'info');
+                });
+                
+                // Theme Options
+                elements.themeOptions.forEach(option => {
+                    option.addEventListener('click', () => {
+                        const theme = option.dataset.theme;
+                        if (theme) {
+                            setTheme(theme);
+                            
+                            // Update active class
+                            elements.themeOptions.forEach(opt => opt.classList.remove('active'));
+                            option.classList.add('active');
+                        }
+                    });
+                });
+                
+                // Toggle Switches
+                for (const key in elements.toggles) {
+                    if (elements.toggles[key]) {
+                        elements.toggles[key].addEventListener('change', () => {
+                            state.settings[key] = elements.toggles[key].checked;
+                            saveSettings();
+                            
+                            // Special handling for some settings
+                            if (key === 'darkMode') {
+                                document.body.classList.toggle('light-mode', !elements.toggles[key].checked);
+                            }
+                        });
+                    }
+                }
+            }
+
+            // Create a new tab
+            function createNewTab(title, url) {
+                const tabId = 'tab-' + Date.now();
+                
+                // Create tab element
+                const tabElement = document.createElement('div');
+                tabElement.className = 'tab';
+                tabElement.dataset.tabId = tabId;
+                tabElement.innerHTML = `
+                    <div class="tab-favicon">
+                        <i class="fas fa-globe"></i>
+                    </div>
+                    <div class="tab-title">${title}</div>
+                    <div class="tab-close">&times;</div>
+                `;
+                
+                // Create iframe element
+                const iframeWrapper = document.createElement('div');
+                iframeWrapper.className = 'iframe-wrapper';
+                iframeWrapper.dataset.tabId = tabId;
+                
+                const iframe = document.createElement('iframe');
+                iframe.src = url;
+                iframe.id = 'iframe-' + tabId;
+                iframe.setAttribute('sandbox', 'allow-same-origin allow-scripts allow-popups allow-forms');
+                iframe.setAttribute('loading', 'lazy');
+                
+                iframeWrapper.appendChild(iframe);
+                
+                // Add to DOM
+                elements.tabsContainer.appendChild(tabElement);
+                elements.iframeContainer.appendChild(iframeWrapper);
+                
+                // Add to state
+                state.tabs.push({
+                    id: tabId,
+                    title: title,
+                    url: url,
+                    favicon: null
+                });
+                
+                // Set up tab event listeners
+                tabElement.addEventListener('click', (e) => {
+                    // Close tab if clicked on close button
+                    if (e.target.classList.contains('tab-close')) {
+                        closeTab(tabId);
+                    } else {
+                        // Activate tab
+                        activateTab(tabId);
+                    }
+                });
+                
+                // Set up iframe load event
+                iframe.addEventListener('load', () => {
+                    // Update tab info
+                    updateTabInfo(tabId, iframe);
+                    
+                    // Add to history if not about:blank
+                    if (url !== 'about:blank') {
+                        addToHistory(title, url);
+                    }
+                });
+                
+                // Activate the new tab
+                activateTab(tabId);
+                
+                // Set URL input value
+                elements.urlInput.value = url === 'about:blank' ? '' : url;
+                
+                return tabId;
+            }
+
+            // Activate a tab
+            function activateTab(tabId) {
+                // Update state
+                state.activeTabId = tabId;
+                
+                // Update UI
+                document.querySelectorAll('.tab').forEach(tab => {
+                    tab.classList.toggle('active', tab.dataset.tabId === tabId);
+                });
+                
+                document.querySelectorAll('.iframe-wrapper').forEach(wrapper => {
+                    wrapper.classList.toggle('active', wrapper.dataset.tabId === tabId);
+                });
+                
+                // Update URL input and status bar
+                const activeTab = state.tabs.find(tab => tab.id === tabId);
+                if (activeTab) {
+                    elements.urlInput.value = activeTab.url === 'about:blank' ? '' : activeTab.url;
+                    updateStatusBar(activeTab);
+                }
+            }
+
+            // Close a tab
+            function closeTab(tabId) {
+                // Find tab index in state
+                const tabIndex = state.tabs.findIndex(tab => tab.id === tabId);
+                
+                if (tabIndex === -1) return;
+                
+                // Remove from DOM
+                const tabElement = document.querySelector(`.tab[data-tab-id="${tabId}"]`);
+                const iframeWrapper = document.querySelector(`.iframe-wrapper[data-tab-id="${tabId}"]`);
+                
+                if (tabElement) tabElement.remove();
+                if (iframeWrapper) iframeWrapper.remove();
+                
+                // Remove from state
+                state.tabs.splice(tabIndex, 1);
+                
+                // Activate another tab if this was the active one
+                if (state.activeTabId === tabId) {
+                    if (state.tabs.length > 0) {
+                        // Activate the previous tab if available, otherwise the next one
+                        const newActiveIndex = Math.max(0, tabIndex - 1);
+                        activateTab(state.tabs[newActiveIndex].id);
+                    } else {
+                        // No tabs left, create a new one
+                        createNewTab('New Tab', 'about:blank');
+                    }
+                }
+            }
+
+            // Navigate to URL
+            function navigateToUrl(tabId, url) {
+                // Format URL
+                let formattedUrl = url;
+                if (!url.startsWith('http://') && !url.startsWith('https://') && url !== 'about:blank') {
+                    // Check if it's a valid URL
+                    if (url.includes('.') && !url.includes(' ')) {
+                        formattedUrl = 'https://' + url;
+                    } else {
+                        // Treat as search query
+                        formattedUrl = 'https://www.google.com/search?q=' + encodeURIComponent(url);
+                    }
+                }
+                
+                // Find tab in state
+                const tabIndex = state.tabs.findIndex(tab => tab.id === tabId);
+                
+                if (tabIndex === -1) return;
+                
+                // Update state
+                state.tabs[tabIndex].url = formattedUrl;
+                
+                // Update iframe src
+                const iframe = document.getElementById('iframe-' + tabId);
+                if (iframe) {
+                    iframe.src = formattedUrl;
+                }
+                
+                // Update URL in status bar
+                updateStatusBar(state.tabs[tabIndex]);
+            }
+
+            // Load URL from input
+            function loadUrl() {
+                const url = elements.urlInput.value.trim();
+                
+                if (!url) return;
+                
+                if (state.activeTabId) {
+                    navigateToUrl(state.activeTabId, url);
+                } else {
+                    createNewTab(url, url);
+                }
+            }
+
+            // Update tab info after iframe load
+            function updateTabInfo(tabId, iframe) {
+                // Find tab in state
+                const tabIndex = state.tabs.findIndex(tab => tab.id === tabId);
+                
+                if (tabIndex === -1) return;
+                
+                // Try to get title from iframe
+                let title = state.tabs[tabIndex].url;
+                try {
+                    if (iframe.contentDocument && iframe.contentDocument.title) {
+                        title = iframe.contentDocument.title;
+                    }
+                } catch (e) {
+                    // Cross-origin restriction, stick with URL as title
+                    title = new URL(state.tabs[tabIndex].url).hostname;
+                }
+                
+                // Update state
+                state.tabs[tabIndex].title = title;
+                
+                // Update tab title in DOM
+                const tabElement = document.querySelector(`.tab[data-tab-id="${tabId}"]`);
+                if (tabElement) {
+                    const titleElement = tabElement.querySelector('.tab-title');
+                    if (titleElement) {
+                        titleElement.textContent = title;
+                    }
+                }
+                
+                // Update status bar if this is the active tab
+                if (state.activeTabId === tabId) {
+                    updateStatusBar(state.tabs[tabIndex]);
+                }
+            }
+
+            // Update status bar
+            function updateStatusBar(tab) {
+                if (!tab) return;
+                
+                // Update URL display
+                elements.currentUrl.innerHTML = `<i class="fas fa-link"></i> ${tab.url === 'about:blank' ? 'No URL' : tab.url}`;
+                
+                // Update security status
+                if (tab.url.startsWith('https://')) {
+                    elements.securityStatus.textContent = 'Secure';
+                    elements.securityStatus.style.color = 'var(--phantom-success)';
+                } else if (tab.url === 'about:blank') {
+                    elements.securityStatus.textContent = 'Secure';
+                    elements.securityStatus.style.color = 'var(--phantom-success)';
+                } else {
+                    elements.securityStatus.textContent = 'Not Secure';
+                    elements.securityStatus.style.color = 'var(--phantom-error)';
+                }
+            }
+
+            // Refresh active tab
+            function refreshActiveTab() {
+                if (!state.activeTabId) return;
+                
+                const iframe = document.getElementById('iframe-' + state.activeTabId);
+                if (iframe) {
+                    iframe.src = iframe.src;
+                }
+            }
+
+            // Toggle fullscreen
+            function toggleFullscreen() {
+                if (!document.fullscreenElement) {
+                    elements.iframeContainer.requestFullscreen().catch((err) => {
+                        showToast('Error attempting to enable fullscreen: ' + err.message, 'error');
+                    });
+                } else {
+                    document.exitFullscreen();
+                }
+            }
+
+            // History management
+            function addToHistory(title, url) {
+                // Add to state
+                state.history.unshift({
+                    id: 'hist-' + Date.now(),
+                    title: title,
+                    url: url,
+                    timestamp: new Date().toISOString()
+                });
+                
+                // Limit history size
+                if (state.history.length > 100) {
+                    state.history.pop();
+                }
+                
+                // Update history UI
+                updateHistoryUI();
+                
+                // Save to local storage
+                saveHistory();
+            }
+
+            function updateHistoryUI() {
+                elements.historyList.innerHTML = '';
+                
+                // Show most recent 5 history items
+                const recentHistory = state.history.slice(0, 5);
+                
+                recentHistory.forEach(item => {
+                    const historyItem = document.createElement('div');
+                    historyItem.className = 'history-item';
+                    historyItem.innerHTML = `
+                        <div class="history-url" title="${item.url}">${item.title || item.url}</div>
+                        <button class="button small">Load</button>
+                    `;
+                    
+                    historyItem.addEventListener('click', () => {
+                        if (state.activeTabId) {
+                            navigateToUrl(state.activeTabId, item.url);
+                            elements.urlInput.value = item.url;
+                        } else {
+                            createNewTab(item.title || item.url, item.url);
+                        }
+                    });
+                    
+                    elements.historyList.appendChild(historyItem);
+                });
+                
+                if (state.history.length === 0) {
+                    elements.historyList.innerHTML = '<div style="padding: 10px; text-align: center;">No history yet</div>';
+                }
+            }
+
+            function loadHistory() {
+                // Try to load from localStorage
+                try {
+                    const savedHistory = localStorage.getItem('phantom_history');
+                    if (savedHistory) {
+                        state.history = JSON.parse(savedHistory);
+                        updateHistoryUI();
+                    }
+                } catch (e) {
+                    console.error('Error loading history:', e);
+                }
+            }
+
+            function saveHistory() {
+                try {
+                    localStorage.setItem('phantom_history', JSON.stringify(state.history));
+                } catch (e) {
+                    console.error('Error saving history:', e);
+                }
+            }
+
+            function clearHistory() {
+                state.history = [];
+                updateHistoryUI();
+                saveHistory();
+            }
+
+            // Bookmark management
+            function addBookmark(name, url) {
+                // Format URL
+                let formattedUrl = url;
+                if (!url.startsWith('http://') && !url.startsWith('https://')) {
+                    formattedUrl = 'https://' + url;
+                }
+                
+                // Add to state
+                state.bookmarks.push({
+                    id: 'bm-' + Date.now(),
+                    name: name,
+                    url: formattedUrl
+                });
+                
+                // Update bookmarks UI
+                updateBookmarksUI();
+                
+                // Save to local storage
+                saveBookmarks();
+            }
+
+            function updateBookmarksUI() {
+                elements.bookmarksList.innerHTML = '';
+                
+                state.bookmarks.forEach(bookmark => {
+                    const bookmarkItem = document.createElement('li');
+                    bookmarkItem.innerHTML = `
+                        <div class="bookmark-url" title="${bookmark.url}">${bookmark.name}</div>
+                        <div class="bookmark-actions">
+                            <button class="bookmark-button delete" title="Delete"><i class="fas fa-trash"></i></button>
+                        </div>
+                    `;
+                    
+                    // Load bookmark
+                    bookmarkItem.querySelector('.bookmark-url').addEventListener('click', () => {
+                        if (state.activeTabId) {
+                            navigateToUrl(state.activeTabId, bookmark.url);
+                            elements.urlInput.value = bookmark.url;
+                        } else {
+                            createNewTab(bookmark.name, bookmark.url);
+                        }
+                    });
+                    
+                    // Delete bookmark
+                    bookmarkItem.querySelector('.bookmark-button.delete').addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        deleteBookmark(bookmark.id);
+                        showToast('Bookmark deleted', 'info');
+                    });
+                    
+                    elements.bookmarksList.appendChild(bookmarkItem);
+                });
+                
+                if (state.bookmarks.length === 0) {
+                    elements.bookmarksList.innerHTML = '<div style="padding: 10px; text-align: center;">No bookmarks</div>';
+                }
+            }
+
+            function deleteBookmark(id) {
+                const index = state.bookmarks.findIndex(bm => bm.id === id);
+                if (index !== -1) {
+                    state.bookmarks.splice(index, 1);
+                    updateBookmarksUI();
+                    saveBookmarks();
+                }
+            }
+
+            function loadBookmarks() {
+                // Try to load from localStorage
+                try {
+                    const savedBookmarks = localStorage.getItem('phantom_bookmarks');
+                    if (savedBookmarks) {
+                        state.bookmarks = JSON.parse(savedBookmarks);
+                        updateBookmarksUI();
+                    } else {
+                        updateBookmarksUI(); // Initialize with default bookmarks
+                    }
+                } catch (e) {
+                    console.error('Error loading bookmarks:', e);
+                    updateBookmarksUI(); // Initialize with default bookmarks
+                }
+            }
+
+            function saveBookmarks() {
+                try {
+                    localStorage.setItem('phantom_bookmarks', JSON.stringify(state.bookmarks));
+                } catch (e) {
+                    console.error('Error saving bookmarks:', e);
+                }
+            }
+
+            // Settings management
+            function loadSettings() {
+                // Try to load from localStorage
+                try {
+                    const savedSettings = localStorage.getItem('phantom_settings');
+                    if (savedSettings) {
+                        const loadedSettings = JSON.parse(savedSettings);
+                        state.settings = { ...state.settings, ...loadedSettings };
+                    }
+                    
+                    // Apply settings to UI
+                    applySettings();
+                } catch (e) {
+                    console.error('Error loading settings:', e);
+                }
+            }
+
+            function saveSettings() {
+                try {
+                    localStorage.setItem('phantom_settings', JSON.stringify(state.settings));
+                } catch (e) {
+                    console.error('Error saving settings:', e);
+                }
+            }
+
+            function resetSettings() {
+                state.settings = {
+                    theme: 'phantom',
+                    darkMode: true,
+                    animations: true,
+                    blurEffects: true,
+                    blockAds: false,
+                    blockTrackers: false,
+                    clearHistoryOnExit: false,
+                    privateBrowsing: false,
+                    autoRefresh: false,
+                    notifications: true,
+                    saveTabsOnExit: true,
+                    hardwareAcceleration: true
+                };
+                
+                applySettings();
+                saveSettings();
+            }
+
+            function applySettings() {
+                // Apply theme
+                setTheme(state.settings.theme);
+                
+                // Update toggle switches
+                for (const key in elements.toggles) {
+                    if (elements.toggles[key] && state.settings[key] !== undefined) {
+                        elements.toggles[key].checked = state.settings[key];
+                    }
+                }
+                
+                // Set active theme option
+                elements.themeOptions.forEach(option => {
+                    option.classList.toggle('active', option.dataset.theme === state.settings.theme);
+                });
+                
+                // Apply dark/light mode
+                document.body.classList.toggle('light-mode', !state.settings.darkMode);
+                
+                // Apply animations setting
+                document.body.classList.toggle('no-animations', !state.settings.animations);
+            }
+
+            function setTheme(theme) {
+                // Set theme
+                state.settings.theme = theme;
+                
+                // Apply theme colors
+                const themes = {
+                    phantom: {
+                        dark: '#0f0721',
+                        primary: '#6a1b9a',
+                        secondary: '#9c27b0',
+                        accent: '#ce93d8'
+                    },
+                    midnight: {
+                        dark: '#0a1929',
+                        primary: '#1a237e',
+                        secondary: '#3949ab',
+                        accent: '#7986cb'
+                    },
+                    emerald: {
+                        dark: '#052e23',
+                        primary: '#004d40',
+                        secondary: '#00897b',
+                        accent: '#4db6ac'
+                    },
+                    crimson: {
+                        dark: '#2a0d0d',
+                        primary: '#b71c1c',
+                        secondary: '#e53935',
+                        accent: '#ef9a9a'
+                    },
+                    sunset: {
+                        dark: '#2c1800',
+                        primary: '#ff6f00',
+                        secondary: '#ffab00',
+                        accent: '#ffd54f'
+                    },
+                    cyber: {
+                        dark: '#001620',
+                        primary: '#006064',
+                        secondary: '#00bcd4',
+                        accent: '#1de9b6'
+                    }
+                };
+                
+                const selectedTheme = themes[theme] || themes.phantom;
+                
+                document.documentElement.style.setProperty('--phantom-dark', selectedTheme.dark);
+                document.documentElement.style.setProperty('--phantom-primary', selectedTheme.primary);
+                document.documentElement.style.setProperty('--phantom-secondary', selectedTheme.secondary);
+                document.documentElement.style.setProperty('--phantom-accent', selectedTheme.accent);
+                document.documentElement.style.setProperty('--phantom-glow', `0 0 15px rgba(${hexToRgb(selectedTheme.secondary)}, 0.7)`);
+                
+                // Save settings
+                saveSettings();
+            }
+
+            // Utility function to convert hex to rgb
+            function hexToRgb(hex) {
+                const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+                return result ? 
+                    `${parseInt(result[1], 16)}, ${parseInt(result[2], 16)}, ${parseInt(result[3], 16)}` : 
+                    '0, 0, 0';
+            }
+
+            // Toast notifications
+            function showToast(message, type = 'info') {
+                // Create toast element
+                const toast = document.createElement('div');
+                toast.className = `toast ${type}`;
+                toast.innerHTML = `
+                    <div class="toast-icon">
+                        <i class="fas ${getToastIcon(type)}"></i>
+                    </div>
+                    <div class="toast-content">${message}</div>
+                    <button class="toast-close">&times;</button>
+                `;
+                
+                // Add to container
+                elements.toastContainer.appendChild(toast);
+                
+                // Setup close button
+                toast.querySelector('.toast-close').addEventListener('click', () => {
+                    toast.remove();
+                });
+                
+                // Auto remove after 4 seconds
+                setTimeout(() => {
+                    if (toast.parentNode) {
+                        toast.remove();
+                    }
+                }, 4000);
+            }
+
+            function getToastIcon(type) {
+                switch (type) {
+                    case 'success': return 'fa-check-circle';
+                    case 'error': return 'fa-exclamation-circle';
+                    case 'warning': return 'fa-exclamation-triangle';
+                    default: return 'fa-info-circle';
+                }
+            }
+
+            // Initialize the app
+            initApp();
+        });
+    </script>
+</body>
+</html>
