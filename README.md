@@ -2,6 +2,8 @@
 
 ## What is Phantom?
 ### * Phantom is an easy bypass for the extension known as Securly.
+## What can it do?
+### * Phantom bypasses Securly in 2 ways. 1st it lets you visit websites that are blocked by the Securly extension, and 2nd it doesn't show up on the Securly monitoring extension.
 ## Why did you make this?
 ### * Securly has terrible security, and I wanted to take advantage of that and spread awareness.
 ## Why open source?
