@@ -1,4 +1,5 @@
 # 👻 Phantom V2 👻
+## WORKS ON APPROXIMATELY 81.7% OF WEBSITES!
 
 ### What is Phantom?
 Phantom is an easy bypass for the extension known as Securly.
